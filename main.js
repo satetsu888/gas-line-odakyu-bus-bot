@@ -10,7 +10,7 @@ var quickReplyItems = [];
 for each(var busLine in busLines) {
   quickReplyItems.push({
     "type": "action",
-    "imageUrl": "https://www.iconsdb.com/icons/preview/gray/bus-xxl.png",
+    "imageUrl": "https://satetsu888.github.io/gas-line-odakyu-bus-bot/static/img/bus-xxl.png",
     "action": {
       "type": "message",
       "label": busLine["name"],
