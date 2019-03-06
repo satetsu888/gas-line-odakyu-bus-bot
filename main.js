@@ -43,8 +43,11 @@ function doPost(e) {
         var message = "本日の運行は終了しました";
       }
       messages = [{
-        'type': 'text',
-        'text': message
+        "type": "text",
+        "text": message,
+        "quickReply": {
+          "items": quickReplyItems
+        }
       }];
     }
   }
