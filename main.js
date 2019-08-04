@@ -38,7 +38,7 @@ function doPost(e) {
     if (userMessage === busLine["name"]){
       var busData = fetchBusData(busLine["url"]);
       if (busData) {
-        var message = busData['arrive_at'] + " " + busData['to'] + "行きは、" + busData['message'];
+        var message = busData['departure_at'] + " " + busData['to'] + "行きは" + busData['message'] + "。目的地到着は" + busData['arrive_at'] + "の予定です。";
       } else {
         var message = "本日の運行は終了したかエラーが発生しました";
       }
@@ -67,25 +67,30 @@ function doPost(e) {
 }
 
 function fetchBusData(url) {
-  var response = UrlFetchApp.fetch(url);
-  
-  var all_content = response.getContentText("utf-8");
-  var cut_re = /<div class="route_box clearfix" style="background-color: gold;">([\s\S]*?)<!-- ---------------- pictogram start -->/;
-  var content = cut_re.exec(all_content)[1];
-  var re = /発車予測[\D]*(\d{2}:\d{2})[\s\S]*?<td[\s]*?class="route_name">[\s\S]*?<font[\s]*?style="color:[\s]*?black;">([\s\S]+?)<\/font>[\s\S]*?<\/td>[\s\S]*?<td colspan="4"[\s]*?style="color:#000000;">([\s\S]*)<\/td>/i
+  try {
+    var response = UrlFetchApp.fetch(url);
+    
+    var all_content = response.getContentText("utf-8");
+    var end_re = /60分以内に接近しているバスはありません。/;
+    var end_match = end_re.exec(all_content);
+    if (end_match) {
+      return;
+    }
 
-  var end_re = /本日の運行は終了/;
-  var end_match = end_re.exec(content);
-  if (end_match) {
+    var cut_re = /<div class="route_box clearfix" style="background-color: gold;">([\s\S]*?)<!-- ---------------- pictogram start -->/;
+    var content = cut_re.exec(all_content)[1];
+    var re = /発車予測[\D]*(\d{2}:\d{2})[\s\S]*?<td[\s]*?class="route_name">[\s\S]*?<font[\s]*?style="color:[\s]*?black;">([\s\S]+?)<\/font>[\s\S]*?<\/td>[\s\S]*?到着予測[\D]*(\d{2}:\d{2})[\s\S]*?<td colspan="4"[\s]*?style="color:#000000;">([\s\S]*)<\/td>/i
+    var match = re.exec(content);
+    if (match) {
+      message = match[4].replace(/&nbsp;|<font[\s\S]*?>|<\/font>|\s/g, '')
+      return {
+        "to": match[2],
+        "departure_at": match[1],
+        "arrive_at": match[3],
+        "message": message,
+      };
+    }
+  } catch(e) {
     return;
-  }
-  var match = re.exec(content);
-  if (match) {
-    message = match[3].replace(/&nbsp;|<font[\s\S]*?>|<\/font>|\s/g, '')
-    return {
-      "to": match[2],
-      "arrive_at": match[1],
-      "message": message,
-    };
   }
 }
