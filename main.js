@@ -40,7 +40,7 @@ function doPost(e) {
       if (busData) {
         var message = busData['arrive_at'] + " " + busData['to'] + "行きは、" + busData['message'];
       } else {
-        var message = "本日の運行は終了しました";
+        var message = "本日の運行は終了したかエラーが発生しました";
       }
       messages = [{
         "type": "text",
@@ -69,19 +69,23 @@ function doPost(e) {
 function fetchBusData(url) {
   var response = UrlFetchApp.fetch(url);
   
+  var all_content = response.getContentText("utf-8");
+  var cut_re = /<div class="route_box clearfix" style="background-color: gold;">([\s\S]*?)<!-- ---------------- pictogram start -->/;
+  var content = cut_re.exec(all_content)[1];
+  var re = /発車予測[\D]*(\d{2}:\d{2})[\s\S]*?<td[\s]*?class="route_name">[\s\S]*?<font[\s]*?style="color:[\s]*?black;">([\s\S]+?)<\/font>[\s\S]*?<\/td>[\s\S]*?<td colspan="4"[\s]*?style="color:#000000;">([\s\S]*)<\/td>/i
+
   var end_re = /本日の運行は終了/;
-  var re = /[\s\S]*?<tr>[\s\S]*?<\/tr>[\s\S]*?<tr>[\s\S]*?<td class="alignC">(\d{2}:\d{2})<\/td>[\s\S]*?<td class="alignC">(\d{2}:\d{2})<\/td>[\s\S]*?<td class="alignL">(.*?)<\/td>[\s\S]*?<td class="alignL">(.*?)<\/td>[\s\S]*?<td class="alignL">(.*?)<\/td>/i;
-  var content = response.getContentText("sjis");
   var end_match = end_re.exec(content);
   if (end_match) {
     return;
   }
   var match = re.exec(content);
   if (match) {
+    message = match[3].replace(/&nbsp;|<font[\s\S]*?>|<\/font>|\s/g, '')
     return {
-      "to": match[3],
-      "arrive_at": match[2],
-      "message": match[5],
+      "to": match[2],
+      "arrive_at": match[1],
+      "message": message,
     };
   }
 }
